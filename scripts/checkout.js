@@ -1,12 +1,4 @@
-// Optional: when importing a lot of values, you
-// can put each value on a separate line to make
-// the code easier to read.
-import {
-  cart,
-  removeFromCart,
-  calculateCartQuantity,
-  updateQuantity
-} from '../data/cart.js';
+import {cart, removeFromCart, updateDeliveryOption} from '../data/cart.js';
 import {products} from '../data/products.js';
 import {formatCurrency} from './utils/money.js';
 import {hello} from 'https://unpkg.com/supersimpledev@1.0.1/hello.esm.js';
@@ -51,9 +43,9 @@ cart.forEach((cartItem) => {
     'dddd, MMMM D'
   );
 
-  cartSummaryHTML += `
-    <div class="cart-item-container
-      js-cart-item-container-${matchingProduct.id}">
+   cartSummaryHTML += `
+    <div class="cart-item-container 
+    js-cart-item-container-${matchingProduct.id}">
       <div class="delivery-date">
         Delivery date: ${dateString}
       </div>
@@ -71,16 +63,10 @@ cart.forEach((cartItem) => {
           </div>
           <div class="product-quantity">
             <span>
-              Quantity: <span class="quantity-label js-quantity-label-${matchingProduct.id}">${cartItem.quantity}</span>
+              Quantity: <span class="quantity-label">${cartItem.quantity}</span>
             </span>
-            <span class="update-quantity-link link-primary js-update-link"
-              data-product-id="${matchingProduct.id}">
+            <span class="update-quantity-link link-primary">
               Update
-            </span>
-            <input class="quantity-input js-quantity-input-${matchingProduct.id}">
-            <span class="save-quantity-link link-primary js-save-link"
-              data-product-id="${matchingProduct.id}">
-              Save
             </span>
             <span class="delete-quantity-link link-primary js-delete-link" data-product-id="${matchingProduct.id}">
               Delete
@@ -120,7 +106,9 @@ function deliveryOptionsHTML(matchingProduct, cartItem) {
       const isCheckek = deliveryOption.id === cartItem.deliveryOptionId;
 
       html += `
-    <div class="delivery-option">
+    <div class="delivery-option js-delivery-option"
+      data-product-id="${matchingProduct.id}"
+      data-delivery-option-id="${deliveryOption.id}">
       <input type="radio"
         ${isCheckek ? 'checked' : ''}
         class="delivery-option-input"
@@ -134,9 +122,11 @@ function deliveryOptionsHTML(matchingProduct, cartItem) {
         </div>
       </div>
     </div>
+    `
+  });
 
-   `;
-});
+  return html;
+}
 
 document.querySelector('.js-order-summary')
   .innerHTML = cartSummaryHTML;
@@ -148,66 +138,16 @@ document.querySelectorAll('.js-delete-link')
       removeFromCart(productId);
 
       const container = document.querySelector(
-        `.js-cart-item-container-${productId}`
+       `.js-cart-item-container-${productId}` 
       );
       container.remove();
-
-      updateCartQuantity();
     });
   });
 
-function updateCartQuantity() {
-  const cartQuantity = calculateCartQuantity();
-
-  document.querySelector('.js-return-to-home-link')
-    .innerHTML = `${cartQuantity} items`;
-}
-
-updateCartQuantity();
-
-document.querySelectorAll('.js-update-link')
-  .forEach((link) => {
-    link.addEventListener('click', () => {
-      const productId = link.dataset.productId;
-
-      const container = document.querySelector(
-        `.js-cart-item-container-${productId}`
-      );
-      container.classList.add('is-editing-quantity');
+  document.querySelectorAll('.js-delivery-option')
+    .forEach((element) => {
+      element.addEventListener('click', () => {
+        const {product, deliveryOptionId} = element.dataset;
+        updateDeliveryOption(productId, deliveryOptionId);
+      });
     });
-  });
-
-document.querySelectorAll('.js-save-link')
-  .forEach((link) => {
-    link.addEventListener('click', () => {
-      const productId = link.dataset.productId;
-
-      // Here's an example of a feature we can add: validation.
-      // Note: we need to move the quantity-related code up
-      // because if the new quantity is not valid, we should
-      // return early and NOT run the rest of the code. This
-      // technique is called an "early return".
-      const quantityInput = document.querySelector(
-        `.js-quantity-input-${productId}`
-      );
-      const newQuantity = Number(quantityInput.value);
-
-      if (newQuantity < 0 || newQuantity >= 1000) {
-        alert('Quantity must be at least 0 and less than 1000');
-        return;
-      }
-      updateQuantity(productId, newQuantity);
-
-      const container = document.querySelector(
-        `.js-cart-item-container-${productId}`
-      );
-      container.classList.remove('is-editing-quantity');
-
-      const quantityLabel = document.querySelector(
-        `.js-quantity-label-${productId}`
-      );
-      quantityLabel.innerHTML = newQuantity;
-
-      updateCartQuantity();
-    });
-  });
